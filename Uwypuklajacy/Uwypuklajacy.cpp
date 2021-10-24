@@ -3,6 +3,12 @@
 
 #include "framework.h"
 #include "Uwypuklajacy.h"
+#include "atlstr.h"
+#include <windowsx.h>
+#include <commdlg.h>
+#include <string>
+#include <thread>
+#include "Image.h"
 
 #define MAX_LOADSTRING 100
 
@@ -26,14 +32,22 @@ HWND buttonFiltr;
 #define ID_BUTTONADDPICTURE 501
 #define ID_CHBOXASM 502
 #define ID_CHBOXCPP 503
+#define ID_BUTTONFILTER 504
+#define ID_THREADCHOICE 505
 
-
+//sciezka do pliku
+wchar_t fname[100];
+//obraz
+Image image;
 
 // Przekaż dalej deklaracje funkcji dołączone w tym module kodu:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+
+
+
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -167,16 +181,18 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    SetWindowText(hText, L"Podaj liczbę wątków: ");
 
    threadChoice = CreateWindowEx(WS_EX_CLIENTEDGE, L"COMBOBOX", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER |
-       CBS_DROPDOWN, 440, 70, 150, 200, hWnd, NULL, hInstance, NULL);
+       CBS_DROPDOWNLIST, 440, 70, 150, 200, hWnd, (HMENU)ID_THREADCHOICE, hInstance, NULL);
    SendMessage(threadChoice, CB_ADDSTRING, 0, (LPARAM)L"2");
+   SendMessage(threadChoice, CB_SETCURSEL, 0,0);
    SendMessage(threadChoice, CB_ADDSTRING, 0, (LPARAM)L"4");
    SendMessage(threadChoice, CB_ADDSTRING, 0, (LPARAM)L"8");
    SendMessage(threadChoice, CB_ADDSTRING, 0, (LPARAM)L"16");
    SendMessage(threadChoice, CB_ADDSTRING, 0, (LPARAM)L"32");
    SendMessage(threadChoice, CB_ADDSTRING, 0, (LPARAM)L"64");
-   
+   //CheckDlgButton(hWnd, ID_THREADCHOICE, (LPARAM)L"2"));
+
    buttonFiltr = CreateWindowEx(0, L"BUTTON", L"Przepuść przez filtr uwypuklający", WS_CHILD | WS_VISIBLE,
-       600, 70, 300, 30, hWnd, (HMENU)ID_BUTTONADDPICTURE, hInstance, NULL);
+       600, 70, 300, 30, hWnd, (HMENU)ID_BUTTONFILTER, hInstance, NULL);
 
 
    if (!hWnd)
@@ -211,17 +227,87 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             switch (wParam)
             {
             case ID_BUTTONADDPICTURE:
-                //TODO wczytywanie pliku
+            {
+                LPSTR filebuff = new char[256];
+                OPENFILENAME open = { 0 };
 
-
+                open.lStructSize = sizeof(OPENFILENAME);
+                open.hwndOwner = hWnd; //Handle to the parent window
+                open.lpstrFilter = L"Image Files(.jpg|.png|.bmp|.jpeg)\0*.jpg;*.png;*.bmp;*.jpeg\0\0";
+                open.lpstrFile = fname;
+                open.lpstrFile[0] = '\0';
+                open.nMaxFile = MAX_PATH;
+                open.lpstrTitle = L"Wybierz obraz\0";
+                open.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_EXPLORER;
+                
+                if (GetOpenFileName(&open))
+                {
+                    //MessageBox(hWnd, open.lpstrFile, L"Info", MB_ICONINFORMATION);
+                    
+                    image.SetImage(fname);
+                    image.Read();
+                }
+                else
+                {
+                    MessageBox(hWnd, open.lpstrFile, L"Info", MB_ICONINFORMATION);
+                }
 
                 break;
+            }
+            case ID_BUTTONFILTER:
+                
+                int id = ComboBox_GetCurSel(threadChoice); //indeks wybranego elementu z listy
+                int numberOfThreads = 0;
+                switch(id)
+                { 
+                case 0:
+                    numberOfThreads = 2;
+                    break;
+                case 1:
+                    numberOfThreads = 4;
+                    break;
+                case 2:
+                    numberOfThreads = 8;
+                    break;
+                case 3:
+                    numberOfThreads = 16;
+                    break;
+                case 4:
+                    numberOfThreads = 32;
+                    break;
+                case 5:
+                    numberOfThreads = 64;
+                    break;
+                }
+                
+                int numberOfRows = image.GetHeight();
+                int rowsForThread = numberOfRows / numberOfThreads;
+                int rest = numberOfRows % numberOfThreads;
+                std::vector<std::thread> threads(numberOfThreads);
+                int actualRow = 0;
+                for (int i = 0; i < numberOfThreads; i++)
+                {
+                    if (rest != 0) 
+                    {
+                        threads[i] = std::thread(&Image::filter, &image, actualRow, actualRow+ rowsForThread +1 );
+                        rest--;
+                        actualRow += rowsForThread + 1;
+                    }
+                    else
+                    {
+                        threads[i] = std::thread(&Image::filter, &image, actualRow, actualRow + rowsForThread);
+                        actualRow += rowsForThread;
+                    }
+                }
+                for (int i = 0; i < numberOfThreads; i++)
+                {
+                    threads[i].join();
+                }
 
-            case ID_CHBOXASM:
-                //wywołaj funkcje ASM
+                //zapisz
+                image.Save();
+
                 break;
-            
-
             }
 
 
