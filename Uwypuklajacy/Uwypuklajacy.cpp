@@ -68,7 +68,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     /************************************************************************************************/
  // Call the MyProc1 assembler procedure from the FiltrAsm.dll library in static mode
     int x = 3, y = 4, z = 0;
-    HINSTANCE hDLL = LoadLibrary(L"FiltrAsm"); // Load FiltrAsm.dll library dynamically
+    /*HINSTANCE hDLL = LoadLibrary(L"FiltrAsm"); // Load FiltrAsm.dll library dynamically
     LPFNDLLFUNC lpfnDllFunc1; // Function pointer
 
     if (NULL != hDLL) {
@@ -76,7 +76,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         if (NULL != lpfnDllFunc1) {
             z = lpfnDllFunc1(x, y); // Call MyProc1 from the FiltrAsm.dll library dynamically
         }
-    }
+    }*/
     /***********************************************************************************************/
 
         /************************************************************************************************/
@@ -92,8 +92,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         }
     }
     /***********************************************************************************************/
-
-
 
     // Wykonaj inicjowanie aplikacji:
     if (!InitInstance (hInstance, nCmdShow))
@@ -161,7 +159,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    hInst = hInstance; // Przechowuj dojście wystąpienia w naszej zmiennej globalnej
 
    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
+      CW_USEDEFAULT, CW_USEDEFAULT, 1000, 300, nullptr, nullptr, hInstance, nullptr);
 
    buttonAddPicture = CreateWindowEx(0, L"BUTTON", L"Wybierz obraz", WS_CHILD | WS_VISIBLE,
        50, 30, 150, 30, hWnd, (HMENU) ID_BUTTONADDPICTURE, hInstance, NULL);
@@ -280,6 +278,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     break;
                 }
                 
+                /*WYBRAC DLL!!!!
+                HINSTANCE hDLL = LoadLibrary(L"FiltrAsm"); // Load FiltrAsm.dll library dynamically
+                LPFNDLLFUNC lpfnDllFunc1; // Function pointer
+                if (NULL != hDLL) {
+                    lpfnDllFunc1 = (LPFNDLLFUNC)GetProcAddress(hDLL, "MyProc1");
+                    if (NULL != lpfnDllFunc1) {
+                        z = lpfnDllFunc1(x, y); // Call MyProc1 from the FiltrAsm.dll library dynamically
+                    }
+                }*/
+
                 int numberOfRows = image.GetHeight();
                 int rowsForThread = numberOfRows / numberOfThreads;
                 int rest = numberOfRows % numberOfThreads;
@@ -289,13 +297,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 {
                     if (rest != 0) 
                     {
-                        threads[i] = std::thread(&Image::filter, &image, actualRow, actualRow+ rowsForThread +1 );
+                        threads[i] = std::thread(&Image::filter, &image, actualRow, actualRow+ rowsForThread +1, image.GetWidth() );
                         rest--;
                         actualRow += rowsForThread + 1;
                     }
                     else
                     {
-                        threads[i] = std::thread(&Image::filter, &image, actualRow, actualRow + rowsForThread);
+                        threads[i] = std::thread(&Image::filter, &image, actualRow, actualRow + rowsForThread, image.GetWidth());
                         actualRow += rowsForThread;
                     }
                 }

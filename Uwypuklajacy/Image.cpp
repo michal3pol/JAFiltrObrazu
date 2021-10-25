@@ -14,7 +14,7 @@ void Image::SetImage(wchar_t* n)
 	_path = n;
 }
 
-void Image::filter(int start, int end)
+void Image::filter(int start, int end, int width)
 {
 	//imitacja funkcji z dll C i asm
 }
@@ -30,9 +30,14 @@ void Image::SetColor(float r, float g, float b, int x, int y)
 
 void Image::Read()
 {
+	//wyzeruj pamiec jesli odczytujesz nowy plik
+	if(_colors)
+	{
+		delete[]_colors;
+	}
 	std::ifstream f;
-	CStringA cstringa(_path);
-	f.open(cstringa, std::ios::in | std::ios::binary);
+	CStringA path(_path);
+	f.open(path, std::ios::in | std::ios::binary);
 
 	if (!f.is_open())
 	{
@@ -52,26 +57,29 @@ void Image::Read()
 
 	//czytanie - przeniesc do innnej funkcji podzielic miedzy watki
 	const int paddingAmount = ((4 - (_width * 3) % 4) % 4);
-	_colors.resize(_width * _height * 3);//*3 bo rgb
+	
+	int size = (_width + paddingAmount) * _height * 3;
+	_colors = new unsigned char[size];
+	f.read((char*)_colors, size);
 
-
+	/*
 	int indeks = 0;
 	for (int y = 0; y < _height; y++)
 	{
 		for (int x = 0; x < _width; x++)
 		{
 			unsigned char color[3];
-			f.read(reinterpret_cast<char*>(color), 3);
-
-			_colors[ indeks] = static_cast<float>(color[0]); //b
+			f.read(reinterpret_cast<char*>(color), 3); 
+			_colors[ indeks] = color[0]; //b
 			indeks++;
-			_colors[indeks] = static_cast<float>(color[1]); //g
+			_colors[indeks] = color[1]; //g
 			indeks++;
-			_colors[ indeks] = static_cast<float>(color[2]); //r
+			_colors[ indeks] = color[2]; //r
 			indeks++;
+			
 		}
 		f.ignore(paddingAmount);
-	}
+	}*/
 	f.close();
 }
 
@@ -79,8 +87,9 @@ void Image::Save()
 {
 	std::ofstream f;
 
-	CStringA cstringa(_path);
-	f.open("proba44.bmp", std::ios::out | std::ios::binary);
+	CStringA path(_path);
+	path.Replace(".bmp", "_filter.bmp");
+	f.open(path, std::ios::out | std::ios::binary);
 	if (!f.is_open())
 	{
 		//nie otwarto pliku
@@ -132,23 +141,27 @@ void Image::Save()
 	f.write(reinterpret_cast<char*>(fileHeader), fileHeaderSize);
 	f.write(reinterpret_cast<char*>(informationHeader), informationHeaderSize);
 
+	int size = (_width + paddingAmount) * _height * 3;
+	f.write((char*)_colors, size);
+
+	/*
 	int indeks = 0;
 	for (int y = 0; y < _height; y++)
 	{
 		for (int x = 0; x < _width; x++)
 		{
-			unsigned char b = static_cast<unsigned char>(_colors[ indeks]); //b
+			unsigned char b = _colors[ indeks]; //b
 			indeks++;
-			unsigned char g = static_cast<unsigned char>(_colors[ indeks]); //g
+			unsigned char g = _colors[ indeks]; //g
 			indeks++;
-			unsigned char r = static_cast<unsigned char>(_colors[ indeks]); //r
+			unsigned char r = _colors[ indeks]; //r
 			indeks++;
 
 			unsigned char color[] = { b, g, r };
 			f.write(reinterpret_cast<char*>(color), 3);
 		}
 		f.write(reinterpret_cast<char*>(bmpPad), paddingAmount);
-	}
+	}*/
 
 	f.close();
 }
