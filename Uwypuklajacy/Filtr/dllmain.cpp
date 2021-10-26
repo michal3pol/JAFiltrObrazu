@@ -26,9 +26,68 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 extern "C" {          // we need to export the C interface
 #endif
 
-    __declspec(dllexport) int div(int a, int b)
+    __declspec(dllexport) void embossingFilter(unsigned char* colors, unsigned char* _colors,int start_height, int stop_height, int width, int height)
     {
-        return a / b;
+        int actualRow = start_height;
+        bool last = false;
+        int paddingAmount = ((4 - (width * 3) % 4) % 4);
+        int row = (width*3) + paddingAmount;
+
+        if (start_height == 0) //first row
+        {
+            //corner
+            for (int i = 0; i < 3; i++) //one pixel - b,g and r
+                _colors[i] = colors[i] + colors[i + 3] + colors[i + row + 3];
+            //row
+            for (int i = 3; i < (width * 3) - 3; i++)
+                _colors[i] = -colors[i - 3] + colors[i] + colors[i + 3] - colors[i + row - 3] + colors[i + row + 3];
+            //corner
+            for (int i = (width * 3) - 3; i < (width * 3); i++) //one pixel - b,g and r
+                _colors[i] = colors[i] - colors[i - 3] - colors[i + row - 3];
+            //padding
+            for (int i = (width * 3); i < row; i++)
+                _colors[i] = 0;
+            actualRow++;
+         }
+        //another rows
+        if (stop_height == height)
+        {
+            stop_height--;
+            last = true;
+        }
+        for (int j = actualRow; j <= stop_height ; j++)
+        {
+            //1st pixel
+            for (int i = j*row; i < j *row + 3; i++) //one pixel - b,g and r
+                _colors[i] = colors[i- row +3] + colors[i] + colors[i + 3] + colors[i + row + 3];
+            for (int i = j * row + 3; i < j * row + (width * 3) - 3; i++)
+            {
+                _colors[i] = -colors[i- row -3] - colors[i - 3] - colors[i + row - 3] + colors[i] 
+                    + colors[i + 3] + colors[i + row + 3] + colors[i- row + 3];
+            }
+            //last pixel
+            for (int i = j * row + (width * 3) -3; i < j * row + (width * 3); i++) //one pixel - b,g and r
+                _colors[i] = colors[i] - colors[i - 3] - colors[i + row - 3] - colors[i- row -3];
+            //padding
+            for (int i = j * row + (width * 3); i < j*row; i++)
+                _colors[i] = 0;
+        }
+        if (last)
+        {
+            //corner
+            for (int i = row*(height-1); i < (row * (height - 1))+3; i++) //one pixel - b,g and r
+                _colors[i] = colors[i] + colors[i + 3] + colors[i - row + 3];
+            //row
+            for (int i = row * (height - 1) + 3; i < row * (height - 1) + (width * 3) - 3; i++)
+                _colors[i] = -colors[i - 3] + colors[i] + colors[i + 3] - colors[i + row - 3] + colors[i + row + 3];
+            //corner
+            for (int i = height * row - (3 + paddingAmount); i < height * row - paddingAmount; i++) //one pixel - b,g and r
+                _colors[i] = -colors[i- row -3] - colors[i - 3] + colors[i];
+            //padding
+            for (int i = height * row - paddingAmount; i < height * row; i++)
+                _colors[i] = 0;
+        }
+
     }
 
 #ifdef __cplusplus

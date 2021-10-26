@@ -14,11 +14,6 @@ void Image::SetImage(wchar_t* n)
 	_path = n;
 }
 
-void Image::filter(int start, int end, int width)
-{
-	//imitacja funkcji z dll C i asm
-}
-
 Image::~Image()
 {
 }
@@ -38,11 +33,8 @@ void Image::Read()
 	std::ifstream f;
 	CStringA path(_path);
 	f.open(path, std::ios::in | std::ios::binary);
-
 	if (!f.is_open())
-	{
 		return;
-	}
 
 	const int fileHeaderSize = 14;
 	const int informationHeaderSize = 40;
@@ -60,6 +52,7 @@ void Image::Read()
 	
 	int size = (_width + paddingAmount) * _height * 3;
 	_colors = new unsigned char[size];
+	_colorsFilter = new unsigned char[size];
 	f.read((char*)_colors, size);
 
 	/*
@@ -142,7 +135,7 @@ void Image::Save()
 	f.write(reinterpret_cast<char*>(informationHeader), informationHeaderSize);
 
 	int size = (_width + paddingAmount) * _height * 3;
-	f.write((char*)_colors, size);
+	f.write((char*)_colorsFilter, size);
 
 	/*
 	int indeks = 0;

@@ -1,6 +1,6 @@
-public MyProc1
+public embossingFilter
 .code
-MyProc1 proc x: DWORD, y: DWORD
+embossingFilter proc x: DWORD, y: DWORD
  xor eax,eax ; EAX = 0
  mov eax,x ; Param1 eax = x
  mov ecx,y ; Param2 ecx = y
@@ -12,5 +12,5 @@ MyProc1 proc x: DWORD, y: DWORD
  ET1: mul x
  neg y
  ret ; return z in EAX register
-MyProc1 endp
+embossingFilter endp
 end ; End of ASM file

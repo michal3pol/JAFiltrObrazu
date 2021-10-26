@@ -14,7 +14,8 @@ private:
     wchar_t* _path;
     //std::vector<unsigned char> _colors;
 
-    unsigned char* _colors;
+    unsigned char* _colors; 
+    unsigned char* _colorsFilter;
 
     unsigned char fileHeader[14];
     unsigned char informationHeader[40];
@@ -29,10 +30,11 @@ public:
     void Save();
     void SetImage(wchar_t* n);
 
-    const unsigned char* GetColorsPtr() { return _colors; }
-    const int GetHeight() { return _height; }
-    const int GetWidth() { return _width; }
+    unsigned char* GetColorsPtr() { return _colors; }
+    unsigned char* GetColorsFilterPtr() { return _colorsFilter; }
 
-    void filter(int start, int end, int width);
+    int GetHeight() { return _height; }
+    int GetWidth() { return _width; }
+
 
 };

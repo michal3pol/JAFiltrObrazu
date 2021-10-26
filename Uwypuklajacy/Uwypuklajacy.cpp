@@ -18,7 +18,7 @@ WCHAR szTitle[MAX_LOADSTRING];                  // Tekst paska tytułu
 WCHAR szWindowClass[MAX_LOADSTRING];            // nazwa klasy okna głównego
 
 //!!!
-typedef HRESULT(__cdecl* LPFNDLLFUNC)(UINT, UINT); // DLL function handler
+typedef HRESULT(__cdecl* LPFNDLLFUNC)(unsigned char*, unsigned char*, UINT, UINT, UINT, UINT); // DLL function handler
 //przyciski
 HWND buttonAddPicture;
 HWND chboxASM;
@@ -59,7 +59,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     // TODO: W tym miejscu umieść kod
 
-
     // Inicjuj ciągi globalne
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadStringW(hInstance, IDC_UWYPUKLAJACY, szWindowClass, MAX_LOADSTRING);
@@ -76,11 +75,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         if (NULL != lpfnDllFunc1) {
             z = lpfnDllFunc1(x, y); // Call MyProc1 from the FiltrAsm.dll library dynamically
         }
-    }*/
+    }
     /***********************************************************************************************/
 
         /************************************************************************************************/
  // Call the div c++ procedure from the Filtr.dll library in static mode
+    /*
     HINSTANCE hDLL2 = LoadLibrary(L"Filtr"); // Load Filtr.dll library dynamically
     LPFNDLLFUNC lpfnDllFunc2; // Function pointer
     x = 8;
@@ -90,7 +90,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         if (NULL != lpfnDllFunc2) {
             z = lpfnDllFunc2(x, y); // Call div from the FiltrAsm.dll library dynamically
         }
-    }
+    }*/
     /***********************************************************************************************/
 
     // Wykonaj inicjowanie aplikacji:
@@ -180,8 +180,9 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    threadChoice = CreateWindowEx(WS_EX_CLIENTEDGE, L"COMBOBOX", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER |
        CBS_DROPDOWNLIST, 440, 70, 150, 200, hWnd, (HMENU)ID_THREADCHOICE, hInstance, NULL);
+   SendMessage(threadChoice, CB_ADDSTRING, 0, (LPARAM)L"1");
+   SendMessage(threadChoice, CB_SETCURSEL, 0, 0);
    SendMessage(threadChoice, CB_ADDSTRING, 0, (LPARAM)L"2");
-   SendMessage(threadChoice, CB_SETCURSEL, 0,0);
    SendMessage(threadChoice, CB_ADDSTRING, 0, (LPARAM)L"4");
    SendMessage(threadChoice, CB_ADDSTRING, 0, (LPARAM)L"8");
    SendMessage(threadChoice, CB_ADDSTRING, 0, (LPARAM)L"16");
@@ -257,37 +258,40 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 int id = ComboBox_GetCurSel(threadChoice); //indeks wybranego elementu z listy
                 int numberOfThreads = 0;
                 switch(id)
-                { 
+                {
                 case 0:
-                    numberOfThreads = 2;
+                    numberOfThreads = 1;
                     break;
                 case 1:
-                    numberOfThreads = 4;
+                    numberOfThreads = 2;
                     break;
                 case 2:
-                    numberOfThreads = 8;
+                    numberOfThreads = 4;
                     break;
                 case 3:
-                    numberOfThreads = 16;
+                    numberOfThreads = 8;
                     break;
                 case 4:
-                    numberOfThreads = 32;
+                    numberOfThreads = 16;
                     break;
                 case 5:
+                    numberOfThreads = 32;
+                    break;
+                case 6:
                     numberOfThreads = 64;
                     break;
                 }
                 
-                /*WYBRAC DLL!!!!
-                HINSTANCE hDLL = LoadLibrary(L"FiltrAsm"); // Load FiltrAsm.dll library dynamically
+                //WYBRAC DLL!!!!
+                HINSTANCE hDLL = LoadLibrary(L"Filtr"); // Load FiltrAsm.dll library dynamically
                 LPFNDLLFUNC lpfnDllFunc1; // Function pointer
                 if (NULL != hDLL) {
-                    lpfnDllFunc1 = (LPFNDLLFUNC)GetProcAddress(hDLL, "MyProc1");
+                    lpfnDllFunc1 = (LPFNDLLFUNC)GetProcAddress(hDLL, "embossingFilter");
                     if (NULL != lpfnDllFunc1) {
-                        z = lpfnDllFunc1(x, y); // Call MyProc1 from the FiltrAsm.dll library dynamically
+                        lpfnDllFunc1(image.GetColorsPtr(), image.GetColorsFilterPtr(), 0, image.GetHeight(), image.GetWidth(), image.GetHeight());
                     }
-                }*/
-
+                }
+                /*
                 int numberOfRows = image.GetHeight();
                 int rowsForThread = numberOfRows / numberOfThreads;
                 int rest = numberOfRows % numberOfThreads;
@@ -310,7 +314,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 for (int i = 0; i < numberOfThreads; i++)
                 {
                     threads[i].join();
-                }
+                }*/
 
                 //zapisz
                 image.Save();
