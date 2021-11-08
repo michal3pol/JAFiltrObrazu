@@ -54,26 +54,20 @@ void Image::Read()
 	_colors = new unsigned char[size];
 	_colorsFilter = new unsigned char[size];
 	f.read((char*)_colors, size);
-
-	/*
-	int indeks = 0;
-	for (int y = 0; y < _height; y++)
-	{
-		for (int x = 0; x < _width; x++)
-		{
-			unsigned char color[3];
-			f.read(reinterpret_cast<char*>(color), 3); 
-			_colors[ indeks] = color[0]; //b
-			indeks++;
-			_colors[indeks] = color[1]; //g
-			indeks++;
-			_colors[ indeks] = color[2]; //r
-			indeks++;
-			
-		}
-		f.ignore(paddingAmount);
-	}*/
 	f.close();
+
+	/*int row = (_width * 3) + paddingAmount;
+	//szarosc
+	for (int j = 0; j < _height; j++) {
+		for (int i = j * row; i < j * row + (_width * 3); i += 3) {
+
+			_colors[i] = _colors[i] * 0.299 + _colors[i + 1] * 0.587 + _colors[i + 2] * 0.114;
+			_colors[i + 1] = _colors[i];
+			_colors[i + 2] = _colors[i];
+
+		}
+	}*/
+	
 }
 
 void Image::Save()
@@ -136,25 +130,6 @@ void Image::Save()
 
 	int size = (_width + paddingAmount) * _height * 3;
 	f.write((char*)_colorsFilter, size);
-
-	/*
-	int indeks = 0;
-	for (int y = 0; y < _height; y++)
-	{
-		for (int x = 0; x < _width; x++)
-		{
-			unsigned char b = _colors[ indeks]; //b
-			indeks++;
-			unsigned char g = _colors[ indeks]; //g
-			indeks++;
-			unsigned char r = _colors[ indeks]; //r
-			indeks++;
-
-			unsigned char color[] = { b, g, r };
-			f.write(reinterpret_cast<char*>(color), 3);
-		}
-		f.write(reinterpret_cast<char*>(bmpPad), paddingAmount);
-	}*/
 
 	f.close();
 }

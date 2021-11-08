@@ -8,6 +8,7 @@
 #include <commdlg.h>
 #include <string>
 #include <thread>
+#include <commctrl.h>
 #include "Image.h"
 
 #define MAX_LOADSTRING 100
@@ -28,15 +29,18 @@ HWND thrFrame;
 HWND threadChoice;
 HWND hText;
 HWND buttonFiltr;
+HWND progressBar;
 
 #define ID_BUTTONADDPICTURE 501
 #define ID_CHBOXASM 502
 #define ID_CHBOXCPP 503
 #define ID_BUTTONFILTER 504
 #define ID_THREADCHOICE 505
+#define ID_PROGRESSBAR 506
 
 //sciezka do pliku
 wchar_t fname[100];
+bool noFile = true;
 //obraz
 Image image;
 
@@ -157,7 +161,13 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // Przechowuj dojście wystąpienia w naszej zmiennej globalnej
-
+   
+   //progress bar
+   /*INITCOMMONCONTROLSEX icc;
+   icc.dwSize = sizeof(INITCOMMONCONTROLSEX);
+   icc.dwICC = ICC_BAR_CLASSES; 
+   InitCommonControlsEx(&icc);
+    */
    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
       CW_USEDEFAULT, CW_USEDEFAULT, 1000, 300, nullptr, nullptr, hInstance, nullptr);
 
@@ -193,6 +203,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    buttonFiltr = CreateWindowEx(0, L"BUTTON", L"Przepuść przez filtr uwypuklający", WS_CHILD | WS_VISIBLE,
        600, 70, 300, 30, hWnd, (HMENU)ID_BUTTONFILTER, hInstance, NULL);
 
+   progressBar = CreateWindowEx(0, PROGRESS_CLASS, NULL, WS_CHILD | WS_VISIBLE | PBS_SMOOTH,
+       600, 110, 300, 30, hWnd, (HMENU)ID_PROGRESSBAR, hInstance, NULL);
 
    if (!hWnd)
    {
@@ -227,6 +239,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
             case ID_BUTTONADDPICTURE:
             {
+                SendMessage(progressBar, PBM_SETPOS, (WPARAM)0, 0); //wyzeruj progressbar
                 LPSTR filebuff = new char[256];
                 OPENFILENAME open = { 0 };
 
@@ -242,19 +255,27 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 if (GetOpenFileName(&open))
                 {
                     //MessageBox(hWnd, open.lpstrFile, L"Info", MB_ICONINFORMATION);
-                    
+                    noFile = false;
                     image.SetImage(fname);
                     image.Read();
                 }
                 else
                 {
-                    MessageBox(hWnd, open.lpstrFile, L"Info", MB_ICONINFORMATION);
+                    MessageBox(hWnd, open.lpstrFile, L"Nie wybrałeś pliku.", MB_ICONINFORMATION);
                 }
 
                 break;
             }
             case ID_BUTTONFILTER:
-                
+
+                if (noFile)
+                {
+                    MessageBox(hWnd, 0, L"Wybierz plik!", MB_ICONINFORMATION);
+                    break;
+                }
+
+                SendMessage(progressBar, PBM_SETPOS, (WPARAM)0, 0);
+
                 int id = ComboBox_GetCurSel(threadChoice); //indeks wybranego elementu z listy
                 int numberOfThreads = 0;
                 switch(id)
@@ -282,40 +303,81 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     break;
                 }
                 
-                //WYBRAC DLL!!!!
-                HINSTANCE hDLL = LoadLibrary(L"Filtr"); // Load FiltrAsm.dll library dynamically
-                LPFNDLLFUNC lpfnDllFunc1; // Function pointer
-                if (NULL != hDLL) {
-                    lpfnDllFunc1 = (LPFNDLLFUNC)GetProcAddress(hDLL, "embossingFilter");
-                    if (NULL != lpfnDllFunc1) {
-                        lpfnDllFunc1(image.GetColorsPtr(), image.GetColorsFilterPtr(), 0, image.GetHeight(), image.GetWidth(), image.GetHeight());
-                    }
-                }
-                /*
+                SendMessage(progressBar, PBM_SETRANGE, 0, (LPARAM)MAKELONG(0, numberOfThreads));
                 int numberOfRows = image.GetHeight();
                 int rowsForThread = numberOfRows / numberOfThreads;
                 int rest = numberOfRows % numberOfThreads;
+                double update = 100 / numberOfThreads;
                 std::vector<std::thread> threads(numberOfThreads);
                 int actualRow = 0;
-                for (int i = 0; i < numberOfThreads; i++)
+                if (IsDlgButtonChecked(hWnd, ID_CHBOXCPP) == BST_CHECKED) //dll cpp
                 {
-                    if (rest != 0) 
-                    {
-                        threads[i] = std::thread(&Image::filter, &image, actualRow, actualRow+ rowsForThread +1, image.GetWidth() );
-                        rest--;
-                        actualRow += rowsForThread + 1;
-                    }
+                    HINSTANCE hDLL = LoadLibrary(L"Filtr"); // Load FiltrAsm.dll library dynamically
+                    LPFNDLLFUNC lpfnDllFunc1; // Function pointer
+                    if (NULL != hDLL)
+                        lpfnDllFunc1 = (LPFNDLLFUNC)GetProcAddress(hDLL, "embossingFilter");
                     else
                     {
-                        threads[i] = std::thread(&Image::filter, &image, actualRow, actualRow + rowsForThread, image.GetWidth());
-                        actualRow += rowsForThread;
+                        MessageBox(hWnd, 0, L"Problem z dll lub funkcją - CPP", MB_ICONINFORMATION);
+                        break;
+                    }
+
+                    for (int i = 0; i < numberOfThreads; i++)
+                    {
+                        if (rest != 0)
+                        {
+                            threads[i] = std::thread(lpfnDllFunc1, image.GetColorsPtr(), image.GetColorsFilterPtr(),
+                                actualRow, actualRow + rowsForThread + 1, image.GetWidth(), image.GetHeight());
+                            rest--;
+                            actualRow += rowsForThread + 1;
+                        }
+                        else
+                        {
+                            threads[i] = std::thread(lpfnDllFunc1, image.GetColorsPtr(), image.GetColorsFilterPtr(),
+                                actualRow, actualRow + rowsForThread, image.GetWidth(), image.GetHeight());
+                            actualRow += rowsForThread;
+                        }
+                    }
+                    for (int i = 0; i < numberOfThreads; i++)
+                    {
+                        SendMessage(progressBar, PBM_DELTAPOS, (WPARAM)1, 0);
+                        threads[i].join();
                     }
                 }
-                for (int i = 0; i < numberOfThreads; i++)
+                if (IsDlgButtonChecked(hWnd, ID_CHBOXASM) == BST_CHECKED) //asm
                 {
-                    threads[i].join();
-                }*/
-
+                    HINSTANCE hDLL2 = LoadLibrary(L"FiltrAsm"); // Load FiltrAsm.dll library dynamically
+                    LPFNDLLFUNC lpfnDllFunc2; // Function pointer
+                    if (NULL != hDLL2) 
+                        lpfnDllFunc2 = (LPFNDLLFUNC)GetProcAddress(hDLL2, "embossingFilter");
+                    else
+                    {
+                        MessageBox(hWnd, 0, L"Problem z dll lub funkcją - ASM", MB_ICONINFORMATION);
+                        break;
+                    }
+                    
+                    for (int i = 0; i < numberOfThreads; i++)
+                    {
+                        if (rest != 0)
+                        {
+                            threads[i] = std::thread(lpfnDllFunc2, image.GetColorsPtr(), image.GetColorsFilterPtr(),
+                                actualRow, actualRow + rowsForThread + 1, image.GetWidth(), image.GetHeight());
+                            rest--;
+                            actualRow += rowsForThread + 1;
+                        }
+                        else
+                        {
+                            threads[i] = std::thread(lpfnDllFunc2, image.GetColorsPtr(), image.GetColorsFilterPtr(),
+                                actualRow, actualRow + rowsForThread, image.GetWidth(), image.GetHeight());
+                            actualRow += rowsForThread;
+                        }
+                    }
+                    for (int i = 0; i < numberOfThreads; i++)
+                    {
+                        SendMessage(progressBar, PBM_DELTAPOS, (WPARAM)1, 0);
+                        threads[i].join();
+                    }
+                }
                 //zapisz
                 image.Save();
 

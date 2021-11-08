@@ -1,16 +1,14 @@
+;ecx -1st arg (colors), 
+;edx -2nd arg (colors_filtered)
+;r8d -3rd arg (start_height)
+;r9d -4th arg (stop_height)
+;ebx -5th arg (width)
+;eax -6th arg (height)
 public embossingFilter
 .code
-embossingFilter proc x: DWORD, y: DWORD
- xor eax,eax ; EAX = 0
- mov eax,x ; Param1 eax = x
- mov ecx,y ; Param2 ecx = y
- ror ecx,1 ; shift ecx right by 1
- shld eax,ecx,2 ; set flags registry
- jnc ET1
- mul y
- ret ; return z in EAX register
- ET1: mul x
- neg y
- ret ; return z in EAX register
+embossingFilter proc
+mov ebx,DWORD PTR[rsp+40] ;5th arg ebx=width
+mov eax,DWORD PTR[rsp+48] ;6th arg eax=height
+ret
 embossingFilter endp
-end ; End of ASM file
+end
