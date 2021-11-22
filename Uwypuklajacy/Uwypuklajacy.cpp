@@ -10,6 +10,7 @@
 #include <thread>
 #include <commctrl.h>
 #include "Image.h"
+#include <chrono>
 
 #define MAX_LOADSTRING 100
 
@@ -67,35 +68,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadStringW(hInstance, IDC_UWYPUKLAJACY, szWindowClass, MAX_LOADSTRING);
     MyRegisterClass(hInstance);
-
-    /************************************************************************************************/
- // Call the MyProc1 assembler procedure from the FiltrAsm.dll library in static mode
-    int x = 3, y = 4, z = 0;
-    /*HINSTANCE hDLL = LoadLibrary(L"FiltrAsm"); // Load FiltrAsm.dll library dynamically
-    LPFNDLLFUNC lpfnDllFunc1; // Function pointer
-
-    if (NULL != hDLL) {
-        lpfnDllFunc1 = (LPFNDLLFUNC)GetProcAddress(hDLL, "MyProc1");
-        if (NULL != lpfnDllFunc1) {
-            z = lpfnDllFunc1(x, y); // Call MyProc1 from the FiltrAsm.dll library dynamically
-        }
-    }
-    /***********************************************************************************************/
-
-        /************************************************************************************************/
- // Call the div c++ procedure from the Filtr.dll library in static mode
-    /*
-    HINSTANCE hDLL2 = LoadLibrary(L"Filtr"); // Load Filtr.dll library dynamically
-    LPFNDLLFUNC lpfnDllFunc2; // Function pointer
-    x = 8;
-    y = 4;
-    if (NULL != hDLL2) {
-        lpfnDllFunc2 = (LPFNDLLFUNC)GetProcAddress(hDLL2, "div");
-        if (NULL != lpfnDllFunc2) {
-            z = lpfnDllFunc2(x, y); // Call div from the FiltrAsm.dll library dynamically
-        }
-    }*/
-    /***********************************************************************************************/
 
     // Wykonaj inicjowanie aplikacji:
     if (!InitInstance (hInstance, nCmdShow))
@@ -321,7 +293,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         MessageBox(hWnd, 0, L"Problem z dll lub funkcją - CPP", MB_ICONINFORMATION);
                         break;
                     }
-
+                    //measure time
+                    auto start = std::chrono::high_resolution_clock::now();
                     for (int i = 0; i < numberOfThreads; i++)
                     {
                         if (rest != 0)
@@ -343,6 +316,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         SendMessage(progressBar, PBM_DELTAPOS, (WPARAM)1, 0);
                         threads[i].join();
                     }
+                    //end measure time
+                    auto stop = std::chrono::high_resolution_clock::now();
+                    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+                    int int_duration = duration.count();
+                    std::string string_duration = std::to_string(int_duration);
+                    MessageBoxA(hWnd, string_duration.c_str(), "Czas trwania: ", MB_OK);
                 }
                 if (IsDlgButtonChecked(hWnd, ID_CHBOXASM) == BST_CHECKED) //asm
                 {
@@ -355,7 +334,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         MessageBox(hWnd, 0, L"Problem z dll lub funkcją - ASM", MB_ICONINFORMATION);
                         break;
                     }
-                    
+
+                    auto start = std::chrono::high_resolution_clock::now();
                     for (int i = 0; i < numberOfThreads; i++)
                     {
                         if (rest != 0)
@@ -377,8 +357,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         SendMessage(progressBar, PBM_DELTAPOS, (WPARAM)1, 0);
                         threads[i].join();
                     }
+                    //end measure time
+                    auto stop = std::chrono::high_resolution_clock::now();
+                    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+                    int int_duration = duration.count();
+                    std::string string_duration = std::to_string(int_duration);
+                    MessageBoxA(hWnd, string_duration.c_str(), "Czas trwania: ", MB_OK);
                 }
-                //zapisz
+                //save
                 image.Save();
 
                 break;

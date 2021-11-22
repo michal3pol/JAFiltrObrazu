@@ -35,17 +35,12 @@ extern "C" {          // we need to export the C interface
 
         if (start_height == 0) //first row
         {
-            //corner
-            for (int i = 0; i < 3; i++) //one pixel - b,g and r
-                //colors_filtered[i] = colors[i] + colors[i + 3] + colors[i + row + 3];
-                colors_filtered[i] = colors[i + row + 3];              
-            //row
-            for (int i = 3; i < (width * 3) - 3; i++)
-                //colors_filtered[i] = -colors[i - 3] + colors[i] + colors[i + 3] - colors[i + row - 3] + colors[i + row + 3];
+            //left corner + row
+            for (int i = 0; i < (width * 3); i++)
                 colors_filtered[i] = colors[i + row + 3];
             //corner
             for (int i = (width * 3) - 3; i < (width * 3); i++) //one pixel - b,g and r
-                colors_filtered[i] = colors[i]; //- colors[i - 3] - colors[i + row - 3];
+                colors_filtered[i] = colors[i]; 
             //padding
             for (int i = (width * 3); i < row; i++)
                 colors_filtered[i] = 0;
@@ -59,19 +54,14 @@ extern "C" {          // we need to export the C interface
         }
         for (int j = actualRow; j <= stop_height-1 ; j++)
         {
-            //1st pixel
+            //1st pixel in row
             for (int i = j*row; i < j *row + 3; i++) //one pixel - b,g and r
-                //colors_filtered[i] = colors[i- row +3] + colors[i] + colors[i + 3] + colors[i + row + 3];
                 colors_filtered[i] = colors[i + row + 3];
+            //row
             for (int i = j * row + 3; i < j * row + (width * 3) - 3; i++)
-            {
-                //colors_filtered[i] = -colors[i- row -3] - colors[i - 3] - colors[i + row - 3] + colors[i] 
-                //    + colors[i + 3] + colors[i + row + 3] + colors[i- row + 3];
-                colors_filtered[i] = -colors[i - row - 3] + colors[i + row + 3]; //wer1
-            }
-            //last pixel
+                colors_filtered[i] = -colors[i - row - 3] + colors[i + row + 3];
+            //last pixel in row
             for (int i = j * row + (width * 3) - 3; i < j * row + (width * 3); i++) //one pixel - b,g and r
-                //colors_filtered[i] = colors[i] - colors[i - 3] - colors[i + row - 3] - colors[i- row -3];
                 colors_filtered[i] = -colors[i - row - 3];
             //padding
             for (int i = j * row + (width * 3); i < j*row; i++)
@@ -81,14 +71,9 @@ extern "C" {          // we need to export the C interface
         {
             //corner
             for (int i = row * (height - 1); i < (row * (height - 1)) + 3; i++) //one pixel - b,g and r
-                colors_filtered[i] = colors[i]; //+ colors[i + 3] + colors[i - row + 3];
-            //row
-            for (int i = row * (height - 1) + 3; i < row * (height - 1) + (width * 3) - 3; i++)
-                //colors_filtered[i] = -colors[i - 3] + colors[i] + colors[i + 3] - colors[i + row - 3] + colors[i + row + 3];
-                colors_filtered[i] = -colors[i - row - 3];
-            //corner
-            for (int i = height * row - (3 + paddingAmount); i < height * row - paddingAmount; i++) //one pixel - b,g and r
-                //colors_filtered[i] = -colors[i- row -3] - colors[i - 3] + colors[i];
+                colors_filtered[i] = colors[i];
+            //row + corner
+            for (int i = row * (height - 1) + 3; i < row * (height - 1) + (width * 3); i++)
                 colors_filtered[i] = -colors[i - row - 3];
             //padding
             for (int i = height * row - paddingAmount; i < height * row; i++)
