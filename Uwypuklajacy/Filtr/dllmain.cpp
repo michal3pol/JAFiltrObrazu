@@ -29,55 +29,56 @@ extern "C" {          // we need to export the C interface
     __declspec(dllexport) void embossingFilter(unsigned char* colors, unsigned char* colors_filtered,int start_height, int stop_height, int width, int height)
     {
         int actualRow = start_height;
-        bool last = false;
         int paddingAmount = ((4 - (width * 3) % 4) % 4);
         int row = (width*3) + paddingAmount;
 
-        if (start_height == 0) //first row
-        {
+        if (start_height == 0) {
             //left corner + row
             for (int i = 0; i < (width * 3); i++)
                 colors_filtered[i] = colors[i + row + 3];
-            //corner
-            for (int i = (width * 3) - 3; i < (width * 3); i++) //one pixel - b,g and r
-                colors_filtered[i] = colors[i]; 
-            //padding
-            for (int i = (width * 3); i < row; i++)
-                colors_filtered[i] = 0;
+            //corner, last pixel
+            int i = (width * 3) - 3;
+            colors_filtered[i] = colors[i];
+            i++;
+            colors_filtered[i] = colors[i];
+            i++;
+            colors_filtered[i] = colors[i];
             actualRow++;
          }
         //another rows
         if (stop_height == height)
-        {
             stop_height--;
-            last = true;
-        }
-        for (int j = actualRow; j <= stop_height-1 ; j++)
-        {
-            //1st pixel in row
-            for (int i = j*row; i < j *row + 3; i++) //one pixel - b,g and r
-                colors_filtered[i] = colors[i + row + 3];
+        for (int j = actualRow; j < stop_height ; j++){
+            int i = j * row;
+            //first pixel
+            colors_filtered[i] = colors[i + row + 3];
+            i++;
+            colors_filtered[i] = colors[i + row + 3];
+            i++;
+            colors_filtered[i] = colors[i + row + 3];
+            i++;
             //row
-            for (int i = j * row + 3; i < j * row + (width * 3) - 3; i++)
+            for (; i < j * row + (width * 3) - 3; i++)
                 colors_filtered[i] = -colors[i - row - 3] + colors[i + row + 3];
             //last pixel in row
-            for (int i = j * row + (width * 3) - 3; i < j * row + (width * 3); i++) //one pixel - b,g and r
-                colors_filtered[i] = -colors[i - row - 3];
-            //padding
-            for (int i = j * row + (width * 3); i < j*row; i++)
-                colors_filtered[i] = 0;
+            colors_filtered[i] = -colors[i - row - 3];
+            i++;
+            colors_filtered[i] = -colors[i - row - 3];
+            i++; 
+            colors_filtered[i] = -colors[i - row - 3];
         }
-        if (last)
-        {
+        if (stop_height == height){
             //corner
-            for (int i = row * (height - 1); i < (row * (height - 1)) + 3; i++) //one pixel - b,g and r
-                colors_filtered[i] = colors[i];
+            int i = row * (height - 1);
+            colors_filtered[i] = colors[i];
+            i++;
+            colors_filtered[i] = colors[i];
+            i++;
+            colors_filtered[i] = colors[i];
+            i++;
             //row + corner
-            for (int i = row * (height - 1) + 3; i < row * (height - 1) + (width * 3); i++)
+            for (; i < row * (height - 1) + (width * 3); i++)
                 colors_filtered[i] = -colors[i - row - 3];
-            //padding
-            for (int i = height * row - paddingAmount; i < height * row; i++)
-                colors_filtered[i] = 0;
         }
 
     }
