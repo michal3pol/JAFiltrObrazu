@@ -28,6 +28,8 @@ extern "C" {          // we need to export the C interface
 
     __declspec(dllexport) void embossingFilter(unsigned char* colors, unsigned char* colors_filtered,int start_height, int stop_height, int width, int height)
     {
+
+
         int actualRow = start_height;
         int paddingAmount = ((4 - (width * 3) % 4) % 4);
         int row = (width*3) + paddingAmount;
