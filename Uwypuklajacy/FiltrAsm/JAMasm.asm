@@ -7,6 +7,8 @@
 public embossingFilter
 .code
 embossingFilter proc
+mov r10d,DWORD PTR[rsp+40] ;5th arg r10d=width
+mov r11d,DWORD PTR[rsp+48] ;6th arg r11d=height
 ;pushing on stack nonvolatile registers
 push rbp
 push rbx
@@ -16,8 +18,6 @@ push r12
 push r13
 push r14
 push r15
-mov r10d,DWORD PTR[rsp+40] ;5th arg r10d=width
-mov r11d,DWORD PTR[rsp+48] ;6th arg r11d=height
 mov r14, rcx ;colors (input array)
 mov r15, rcx ;colors_filtered (output array)
 ;variables
@@ -43,19 +43,37 @@ add r13d, r12d
 ;if(start_height == 0)
 cmp r8d, 0 
 je first_row
-jmp short check_last
+jmp check_last
 
 first_row:
-	pinsrb xmm0, BYTE PTR[rcx],0 ;byte to xmm0 
-	pinsrb xmm0, BYTE PTR[rcx+1],1
-	pinsrb xmm0, BYTE PTR[rcx+2],2
+	xor rsi, rsi ;rsi - actual index of r,g,b
+	xor edx, edx
+	mov edx, r10d
+	imul edx, 3 
+	sub edx, 3 ;(width*3)-3
+	loop_pix_1st_row:
+		add rsi, r13 ;+row
+		pinsrb xmm0, BYTE PTR[r14 + rsi +3],0 ;byte to xmm0 
+		pinsrb xmm0, BYTE PTR[r14 + rsi +4],1
+		pinsrb xmm0, BYTE PTR[r14 + rsi +5],2
+		sub rsi, r13 ;-row
+		pextrb BYTE PTR[r15 + rsi], xmm0,0
+		pextrb BYTE PTR[r15 + rsi +1], xmm0,1
+		pextrb BYTE PTR[r15 + rsi +2], xmm0,2
+		add rsi, 3 
+		cmp rsi, rdx ; if(index == (width*3)-3)
+		je last_pix_1st_row
+		jmp loop_pix_1st_row
+	last_pix_1st_row:
+		pinsrb xmm0, BYTE PTR[r14 + rsi],0 ;byte to xmm0 
+		pinsrb xmm0, BYTE PTR[r14 + rsi + 1],1
+		pinsrb xmm0, BYTE PTR[r14 + rsi + 2],2
+		pextrb BYTE PTR[r15 + rsi], xmm0,0
+		pextrb BYTE PTR[r15 + rsi +1], xmm0,1
+		pextrb BYTE PTR[r15 + rsi +2], xmm0,2
+		add r8d, 1 ;actualrow++
 
-
-	;todo loops
-
-add r8d, 1 ;actualrow++
-
-check_last:  ;todo
+check_last:  
 	cmp r9d, r11d ;if (stop_height == height)
 	je last_row 
 	jmp another_rows 
@@ -65,6 +83,16 @@ another_rows:
 	xor rsi, rsi
 	mov rsi, r8 ;rsi= actualrow
 	imul rsi, r13 ;rsi*row
+
+	;(width*3)%16 -> how many loops for 16 rgb
+	xor edx, edx
+	mov eax, r10d
+	imul eax, 3
+	mov ecx, 16
+	div ecx		;in eax how many times loop, and rest of gbr in edx
+	cmp eax, 0  ;less than 3,2 pixel
+	je loop_pix_rest
+
 loop_rows:
 	;first pixel
 	add rsi, r13 ;+row
@@ -75,17 +103,8 @@ loop_rows:
 	pextrb BYTE PTR[r15 + rsi], xmm0,0
 	pextrb BYTE PTR[r15 + rsi +1], xmm0,1
 	pextrb BYTE PTR[r15 + rsi +2], xmm0,2
-	;xor al, al
-	;mov al,  BYTE PTR[r14+ rsi + r13 + 3]    ; B - colors_filtered[i] = colors[i] 
-	;mov BYTE PTR[r15+ rsi + r13], al
-	;add rsi, 1
-	;mov al,  BYTE PTR[r14+ rsi + r13 + 3]    ; G - colors_filtered[i] = colors[i] 
-	;mov BYTE PTR[r15+ rsi+ r13], al	  
-	;add rsi, 1
-	;mov al,  BYTE PTR[r14+ rsi + r13 +3]    ; R - colors_filtered[i] = colors[i] 
-	;mov BYTE PTR[r15 + rsi+ r13 ], al	
-	;add rsi, 1
 	
+	loop_pix_xmm:
 	;sprawdzic ile razy moge dodawac po 16 - zmienna w rdi i reszta pozniej 
 		add rsi, r13 ;+row
 		pinsrb xmm0, BYTE PTR[r14 + rsi+3],0 ;byte to xmm0 - r14-adress rsi-index +3
@@ -122,7 +141,7 @@ loop_rows:
 		pinsrb xmm1, BYTE PTR[r14 + rsi+10],13
 		pinsrb xmm1, BYTE PTR[r14 + rsi+11],14
 		pinsrb xmm1, BYTE PTR[r14 + rsi+12],15
-		;!!!!!!!!!!!!odjac xmm0-xmm1
+		psubb xmm0, xmm1 ;substract xmm0-xmm1
 		add rsi, r13 ;+row
 		pextrb BYTE PTR[r15 + rsi], xmm0,0
 		pextrb BYTE PTR[r15 + rsi + 1], xmm0,1
@@ -142,6 +161,13 @@ loop_rows:
 		pextrb BYTE PTR[r15 + rsi + 15], xmm0,15
 		add rsi, 16
 		;sprawdzic zmienna co zrobie
+		sub eax, 1
+		cmp eax, 0 
+		je loop_pix_rest
+		jmp loop_pix_xmm
+
+		loop_pix_rest:
+		;kilka ostatnich pixeli w rzedzie
 
 	;last pixel
 	add rsi, r13 ;+row
@@ -153,11 +179,11 @@ loop_rows:
 	pextrb BYTE PTR[r15 + rsi +1], xmm0,1
 	pextrb BYTE PTR[r15 + rsi +2], xmm0,2
 
-cmp r8d, r9d ;if actual_row == stop_height
-je proc_end
-add r8d, 1 ;actualrow++
-add rsi, r13 ;increase index + row  -rsi
-jmp loop_rows
+	cmp r8d, r9d ;if actual_row == stop_height
+	je proc_end
+	add r8d, 1 ;actualrow++
+	add rsi, r13 ;increase index + row  -rsi
+	jmp loop_rows
 
 last_row:
 ;todo

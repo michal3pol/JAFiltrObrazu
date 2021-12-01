@@ -29,14 +29,13 @@ extern "C" {          // we need to export the C interface
     __declspec(dllexport) void embossingFilter(unsigned char* colors, unsigned char* colors_filtered,int start_height, int stop_height, int width, int height)
     {
 
-
         int actualRow = start_height;
         int paddingAmount = ((4 - (width * 3) % 4) % 4);
         int row = (width*3) + paddingAmount;
 
         if (start_height == 0) {
             //left corner + row
-            for (int i = 0; i < (width * 3); i++)
+            for (int i = 0; i < (width * 3) - 3; i++)
                 colors_filtered[i] = colors[i + row + 3];
             //corner, last pixel
             int i = (width * 3) - 3;
