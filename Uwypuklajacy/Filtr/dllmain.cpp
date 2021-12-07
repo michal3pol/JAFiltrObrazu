@@ -32,6 +32,7 @@ extern "C" {          // we need to export the C interface
         int actualRow = start_height;
         int paddingAmount = ((4 - (width * 3) % 4) % 4);
         int row = (width*3) + paddingAmount;
+        bool last_row = false;
 
         if (start_height == 0) {
             //left corner + row
@@ -47,8 +48,10 @@ extern "C" {          // we need to export the C interface
             actualRow++;
          }
         //another rows
-        if (stop_height == height)
+        if (stop_height == height) {
             stop_height--;
+            last_row = true;
+        }
         for (int j = actualRow; j < stop_height ; j++){
             int i = j * row;
             //first pixel
@@ -68,7 +71,7 @@ extern "C" {          // we need to export the C interface
             i++; 
             colors_filtered[i] = -colors[i - row - 3];
         }
-        if (stop_height == height){
+        if (last_row){
             //corner
             int i = row * (height - 1);
             colors_filtered[i] = colors[i];
@@ -79,7 +82,7 @@ extern "C" {          // we need to export the C interface
             i++;
             //row + corner
             for (; i < row * (height - 1) + (width * 3); i++)
-                colors_filtered[i] = -colors[i - row - 3];
+                colors_filtered[i] = colors[i - row - 3];
         }
 
     }
