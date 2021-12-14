@@ -177,7 +177,8 @@ loop_rows:
 		jmp loop_pix_xmm
 
 		pix_rest:	;in edx rest of rgb to compete
-		cmp edx, 0 ;no rgb to compete
+		cmp edx, 0 ;no rgb to compete ;xor rbx,rbx
+		mov rbx, 0
 		je last_pixel_row
 			loop_pix_rest:
 			add rsi, r13 ;+row [i+row] 
@@ -186,7 +187,7 @@ loop_rows:
 			sub rsi, r13 ;-row [i-row]
 			sub bl,	BYTE PTR[r14 + rsi - 3]
 			add rsi, r13 ;+row [i] 
-			mov bl,	BYTE PTR[r15 + rsi];zapisac do r15 colorsfiltered
+			mov BYTE PTR[r15 + rsi], bl;zapisac do r15 colorsfiltered
 			add rsi, 1
 			sub edx, 1
 			cmp edx, 0
