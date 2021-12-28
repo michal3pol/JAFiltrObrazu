@@ -11,6 +11,8 @@
 #include <commctrl.h>
 #include "Image.h"
 #include <chrono>
+#include <iostream>
+#include <fstream>
 
 #define MAX_LOADSTRING 100
 
@@ -274,99 +276,112 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     numberOfThreads = 64;
                     break;
                 }
-                
-                SendMessage(progressBar, PBM_SETRANGE, 0, (LPARAM)MAKELONG(0, numberOfThreads));
-                int numberOfRows = image.GetHeight();
-                int rowsForThread = numberOfRows / numberOfThreads;
-                int rest = numberOfRows % numberOfThreads;
-                double update = 100 / numberOfThreads;
-                std::vector<std::thread> threads(numberOfThreads);
-                int actualRow = 0;
-                if (IsDlgButtonChecked(hWnd, ID_CHBOXCPP) == BST_CHECKED) //dll cpp
-                {
-                    HINSTANCE hDLL = LoadLibrary(L"Filtr"); // Load FiltrAsm.dll library dynamically
-                    LPFNDLLFUNC lpfnDllFunc1; // Function pointer
-                    if (NULL != hDLL)
-                        lpfnDllFunc1 = (LPFNDLLFUNC)GetProcAddress(hDLL, "embossingFilter");
-                    else
-                    {
-                        MessageBox(hWnd, 0, L"Problem z dll lub funkcją - CPP", MB_ICONINFORMATION);
-                        break;
-                    }
-                    //measure time
-                    auto start = std::chrono::high_resolution_clock::now();
-                    for (int i = 0; i < numberOfThreads; i++)
-                    {
-                        if (rest != 0)
-                        {
-                            threads[i] = std::thread(lpfnDllFunc1, image.GetColorsPtr(), image.GetColorsFilterPtr(),
-                                actualRow, actualRow + rowsForThread + 1, image.GetWidth(), image.GetHeight());
-                            rest--;
-                            actualRow += rowsForThread + 1;
-                        }
-                        else
-                        {
-                            threads[i] = std::thread(lpfnDllFunc1, image.GetColorsPtr(), image.GetColorsFilterPtr(),
-                                actualRow, actualRow + rowsForThread, image.GetWidth(), image.GetHeight());
-                            actualRow += rowsForThread;
-                        }
-                    }
-                    for (int i = 0; i < numberOfThreads; i++)
-                    {
-                        SendMessage(progressBar, PBM_DELTAPOS, (WPARAM)1, 0);
-                        threads[i].join();
-                    }
-                    //end measure time
-                    auto stop = std::chrono::high_resolution_clock::now();
-                    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-                    int int_duration = duration.count();
-                    std::string string_duration = std::to_string(int_duration);
-                    MessageBoxA(hWnd, string_duration.c_str(), "Czas trwania: ", MB_OK);
-                }
-                if (IsDlgButtonChecked(hWnd, ID_CHBOXASM) == BST_CHECKED) //asm
-                {
-                    HINSTANCE hDLL2 = LoadLibrary(L"FiltrAsm"); // Load FiltrAsm.dll library dynamically
-                    LPFNDLLFUNC lpfnDllFunc2; // Function pointer
-                    if (NULL != hDLL2) 
-                        lpfnDllFunc2 = (LPFNDLLFUNC)GetProcAddress(hDLL2, "embossingFilter");
-                    else
-                    {
-                        MessageBox(hWnd, 0, L"Problem z dll lub funkcją - ASM", MB_ICONINFORMATION);
-                        break;
-                    }
 
-                    auto start = std::chrono::high_resolution_clock::now();
-                    for (int i = 0; i < numberOfThreads; i++)
-                    {
-                        if (rest != 0)
-                        {
-                            threads[i] = std::thread(lpfnDllFunc2, image.GetColorsPtr(), image.GetColorsFilterPtr(),
-                                actualRow, actualRow + rowsForThread + 1, image.GetWidth(), image.GetHeight());
-                            rest--;
-                            actualRow += rowsForThread + 1;
-                        }
-                        else
-                        {
-                            threads[i] = std::thread(lpfnDllFunc2, image.GetColorsPtr(), image.GetColorsFilterPtr(),
-                                actualRow, actualRow + rowsForThread, image.GetWidth(), image.GetHeight());
-                            actualRow += rowsForThread;
-                        }
-                    }
-                    for (int i = 0; i < numberOfThreads; i++)
-                    {
-                        SendMessage(progressBar, PBM_DELTAPOS, (WPARAM)1, 0);
-                        threads[i].join();
-                    }
-                    //end measure time
-                    auto stop = std::chrono::high_resolution_clock::now();
-                    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-                    int int_duration = duration.count();
-                    std::string string_duration = std::to_string(int_duration);
-                    MessageBoxA(hWnd, string_duration.c_str(), "Czas trwania: ", MB_OK);
-                }
-                //save
-                image.Save();
+                std::ofstream file("results.csv", std::ios::app);
+                //file.open("results.csv", std::ios::out, std::ios::app);
+                if (file){
 
+                    file << numberOfThreads << "\n";
+
+                    for (int loop = 0; loop < 10; loop++)
+                    {
+                        SendMessage(progressBar, PBM_SETRANGE, 0, (LPARAM)MAKELONG(0, numberOfThreads));
+                        int numberOfRows = image.GetHeight();
+                        int rowsForThread = numberOfRows / numberOfThreads;
+                        int rest = numberOfRows % numberOfThreads;
+                        double update = 100 / numberOfThreads;
+                        std::vector<std::thread> threads(numberOfThreads);
+                        int actualRow = 0;
+                        if (IsDlgButtonChecked(hWnd, ID_CHBOXCPP) == BST_CHECKED) //dll cpp
+                        {
+                            HINSTANCE hDLL = LoadLibrary(L"Filtr"); // Load FiltrAsm.dll library dynamically
+                            LPFNDLLFUNC lpfnDllFunc1; // Function pointer
+                            if (NULL != hDLL)
+                                lpfnDllFunc1 = (LPFNDLLFUNC)GetProcAddress(hDLL, "embossingFilter");
+                            else
+                            {
+                                MessageBox(hWnd, 0, L"Problem z dll lub funkcją - CPP", MB_ICONINFORMATION);
+                                break;
+                            }
+                            //measure time
+                            auto start = std::chrono::high_resolution_clock::now();
+                            for (int i = 0; i < numberOfThreads; i++)
+                            {
+                                if (rest != 0)
+                                {
+                                    threads[i] = std::thread(lpfnDllFunc1, image.GetColorsPtr(), image.GetColorsFilterPtr(),
+                                        actualRow, actualRow + rowsForThread + 1, image.GetWidth(), image.GetHeight());
+                                    rest--;
+                                    actualRow += rowsForThread + 1;
+                                }
+                                else
+                                {
+                                    threads[i] = std::thread(lpfnDllFunc1, image.GetColorsPtr(), image.GetColorsFilterPtr(),
+                                        actualRow, actualRow + rowsForThread, image.GetWidth(), image.GetHeight());
+                                    actualRow += rowsForThread;
+                                }
+                            }
+                            for (int i = 0; i < numberOfThreads; i++)
+                            {
+                                SendMessage(progressBar, PBM_DELTAPOS, (WPARAM)1, 0);
+                                threads[i].join();
+                            }
+                            //end measure time
+                            auto stop = std::chrono::high_resolution_clock::now();
+                            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+                            float int_duration = duration.count();
+                            file << int_duration << "\n";
+                            std::string string_duration = std::to_string(int_duration);
+                            //MessageBoxA(hWnd, string_duration.c_str(), "Czas trwania: ", MB_OK);
+                        }
+                        if (IsDlgButtonChecked(hWnd, ID_CHBOXASM) == BST_CHECKED) //asm
+                        {
+                            HINSTANCE hDLL2 = LoadLibrary(L"FiltrAsm"); // Load FiltrAsm.dll library dynamically
+                            LPFNDLLFUNC lpfnDllFunc2; // Function pointer
+                            if (NULL != hDLL2)
+                                lpfnDllFunc2 = (LPFNDLLFUNC)GetProcAddress(hDLL2, "embossingFilter");
+                            else
+                            {
+                                MessageBox(hWnd, 0, L"Problem z dll lub funkcją - ASM", MB_ICONINFORMATION);
+                                break;
+                            }
+
+                            auto start = std::chrono::high_resolution_clock::now();
+                            for (int i = 0; i < numberOfThreads; i++)
+                            {
+                                if (rest != 0)
+                                {
+                                    threads[i] = std::thread(lpfnDllFunc2, image.GetColorsPtr(), image.GetColorsFilterPtr(),
+                                        actualRow, actualRow + rowsForThread + 1, image.GetWidth(), image.GetHeight());
+                                    rest--;
+                                    actualRow += rowsForThread + 1;
+                                }
+                                else
+                                {
+                                    threads[i] = std::thread(lpfnDllFunc2, image.GetColorsPtr(), image.GetColorsFilterPtr(),
+                                        actualRow, actualRow + rowsForThread, image.GetWidth(), image.GetHeight());
+                                    actualRow += rowsForThread;
+                                }
+                            }
+                            for (int i = 0; i < numberOfThreads; i++)
+                            {
+                                SendMessage(progressBar, PBM_DELTAPOS, (WPARAM)1, 0);
+                                threads[i].join();
+                            }
+                            //end measure time
+                            auto stop = std::chrono::high_resolution_clock::now();
+                            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+                            int int_duration = duration.count();
+                            file << int_duration << "\n";
+                            std::string string_duration = std::to_string(int_duration);
+                            //MessageBoxA(hWnd, string_duration.c_str(), "Czas trwania: ", MB_OK);
+
+                        }
+                    }
+                    //save
+                    image.Save();
+                    file.close();
+                }
                 break;
             }
 
