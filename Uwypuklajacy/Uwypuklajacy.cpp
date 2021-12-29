@@ -224,7 +224,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                 open.lStructSize = sizeof(OPENFILENAME);
                 open.hwndOwner = hWnd; //Handle to the parent window
-                open.lpstrFilter = L"Image Files(.jpg|.png|.bmp|.jpeg)\0*.jpg;*.png;*.bmp;*.jpeg\0\0";
+                open.lpstrFilter = L"Image Files(.bmp)\0.bmp;*\0\0";
                 open.lpstrFile = fname;
                 open.lpstrFile[0] = '\0';
                 open.nMaxFile = MAX_PATH;
@@ -235,7 +235,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 {
                     //MessageBox(hWnd, open.lpstrFile, L"Info", MB_ICONINFORMATION);
                     noFile = false;
-                    image.SetImage(fname);
+                    if (!image.SetImage(fname)) {
+                        MessageBoxA(hWnd, "Wybierz plik z rozszerzeniem .bmp", "Error!", MB_OK);
+                        break;
+                    }
                     image.Read();
                 }
                 else

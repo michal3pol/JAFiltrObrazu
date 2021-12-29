@@ -15,9 +15,14 @@ Image::Image()
 { 
 }
 
-void Image::SetImage(wchar_t* n)
+bool Image::SetImage(wchar_t* n)
 {
 	_path = n;
+	CStringA path(_path);
+	if (path.Find(".bmp") != std::string::npos) {
+		return true;
+	}
+	return false;
 }
 
 Image::~Image()

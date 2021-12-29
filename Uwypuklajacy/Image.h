@@ -35,7 +35,7 @@ public:
     void SetColor(float r, float g, float b, int x, int y);
     //Color GetColor(int x, int y) const;
     void Save();
-    void SetImage(wchar_t* n);
+    bool SetImage(wchar_t* n);
 
     unsigned char* GetColorsPtr() { return _colors; }
     unsigned char* GetColorsFilterPtr() { return _colorsFilter; }
