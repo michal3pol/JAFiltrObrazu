@@ -1,3 +1,11 @@
+;Jêzyki Asemblerowe
+;Filtrowanie obrazu - filtr uwypuklaj¹cy
+;Ka¿da ze sk³adowych obrazu RGB przekszta³cana jest przez maskê, tak aby wykryæ krawêdzie w obrazie. Efekt powinien byæ porównywalny do p³askorzeŸby
+;11.01.2022 r. Rok akademicki: 3, semestr: 5, grupa: V
+;Autor: Micha³ Foks
+;wersja: 1.0
+
+;args:
 ;rcx -1st arg (colors), 
 ;rdx -2nd arg (colors_filtered) 
 ;r8d -3rd arg (start_height)
@@ -91,7 +99,7 @@ another_rows:
 	sub eax, 3	;-3 cuz last pixel -> another mask 
 	mov ecx, 16
 	div ecx		;in eax how many times loop, and rest of gbr in edx
-	cmp eax, 0  ;less than 3,2 pixel
+	cmp eax, 0  ;less than 3/2 pixel
 	je pix_rest
 
 loop_rows:
@@ -122,16 +130,15 @@ loop_rows:
 		movups xmm1, [r14 + rsi-3]	;move 16 bytes from memory to xmm
 		psubb xmm0, xmm1			;substract xmm0-xmm1
 		add rsi, r13 ;+row [i]
-		movups [r15 + rsi], xmm0	;move 16 bytes from memory to xmm
+		movups [r15 + rsi], xmm0	;move 16 bytes from xmm to memory
 		add rsi, 16
-		;sprawdzic zmienna co zrobie
 		sub eax, 1
 		cmp eax, 0 ; if there are no more 16rgb
 		je pix_rest
 		jmp loop_pix_xmm
 
 		pix_rest:	;in edx rest of rgb to compete
-		cmp edx, 0 ;no rgb to compete ;xor rbx,rbx
+		cmp edx, 0 ;no rgb to compete 
 		mov rbx, 0
 		je last_pixel_row
 			loop_pix_rest:
@@ -161,7 +168,7 @@ loop_rows:
 	add r8d, 1 ;actualrow++
 	cmp r8d, r9d ;if actual_row == stop_height
 	je proc_end
-	add rsi, r12 ;increase index + PADDING!!!!!  ->rsi
+	add rsi, r12 ;increase index + padding ->rsi
 	jmp loop_rows
 
 last_row:
