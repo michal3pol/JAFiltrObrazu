@@ -1,4 +1,11 @@
-﻿// Uwypuklajacy.cpp : Definiuje punkt wejścia dla aplikacji.
+﻿// Języki Asemblerowe
+// Filtrowanie obrazu - filtr uwypuklający
+// Każda ze składowych obrazu RGB przekształcana jest przez maskę, tak aby wykryć krawędzie w obrazie.Efekt powinien być porównywalny do płaskorzeźby
+// 11.01.2022 r.Rok akademicki : 3, semestr : 5, grupa : V
+// Autor: Michał Foks
+// wersja: 1.0
+// 
+// Uwypuklajacy.cpp : Definiuje punkt wejścia dla aplikacji.
 //
 
 #include "framework.h"
