@@ -325,10 +325,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     }
                     //end measure time
                     auto stop = std::chrono::high_resolution_clock::now();
-                    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+                    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
                     int int_duration = duration.count();
                     std::string string_duration = std::to_string(int_duration);
-                    MessageBoxA(hWnd, string_duration.c_str(), "Czas trwania: ", MB_OK);
+                    MessageBoxA(hWnd, string_duration.c_str(), "Czas trwania [ms]: ", MB_OK);
                 }
                 if (IsDlgButtonChecked(hWnd, ID_CHBOXASM) == BST_CHECKED) //asm
                 {
@@ -366,10 +366,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     }
                     //end measure time
                     auto stop = std::chrono::high_resolution_clock::now();
-                    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+                    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
                     int int_duration = duration.count();
                     std::string string_duration = std::to_string(int_duration);
-                    MessageBoxA(hWnd, string_duration.c_str(), "Czas trwania: ", MB_OK);
+                    MessageBoxA(hWnd, string_duration.c_str(), "Czas trwania [ms]: ", MB_OK);
                 }
                 //save
                 image.Save();
